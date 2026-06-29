@@ -88,7 +88,7 @@ export default function Home() {
     }
 
     let active = true;
-    const startLedger = currentPoll.latestLedger + 1;
+    const startLedger = currentPoll.latestLedger;
     const timer = window.setInterval(async () => {
       try {
         setSyncing(true);

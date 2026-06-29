@@ -45,6 +45,11 @@ export type VoteResult = {
 const FALLBACK_QUESTION = "Which Stellar developer experience matters most for Level 2?";
 const FALLBACK_OPTIONS = ["Multi-wallet UX", "On-chain poll state", "Live activity feed"];
 
+function isLedgerRangeError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.toLowerCase().includes("startledger must be within the ledger range");
+}
+
 function requireContractId(): string {
   if (!CONTRACT_ID) {
     throw new Error("Invalid contract address. Set NEXT_PUBLIC_CONTRACT_ID first.");
@@ -186,17 +191,26 @@ export async function fetchVoteEvents(fromLedger: number, options: PollOption[])
     return [];
   }
 
-  const response = await getRpcServer().getEvents({
-    startLedger: fromLedger,
-    filters: [
-      {
-        type: "contract",
-        contractIds: [CONTRACT_ID],
-        topics: [[nativeToScVal("vote").toXDR("base64")]],
-      },
-    ],
-    limit: 20,
-  });
+  let response: Awaited<ReturnType<ReturnType<typeof getRpcServer>["getEvents"]>>;
+  try {
+    response = await getRpcServer().getEvents({
+      startLedger: fromLedger,
+      filters: [
+        {
+          type: "contract",
+          contractIds: [CONTRACT_ID],
+          topics: [[nativeToScVal("vote").toXDR("base64")]],
+        },
+      ],
+      limit: 20,
+    });
+  } catch (error) {
+    if (isLedgerRangeError(error)) {
+      return [];
+    }
+
+    throw error;
+  }
 
   return response.events.map((event) => {
     const value = scValToNative(event.value);
