@@ -1,6 +1,6 @@
 # Stellar Live Poll
 
-Live Demo: TODO - Add Vercel deployment URL
+Live Demo: [https://stellar-live-pol.vercel.app/](https://stellar-live-pol.vercel.app/)
 
 Deployed Contract Address: `CBYUYRYPOKU5PMS4A2XC4WCUI6S3ZE3RTRZPSSGGJWKDIN2BPWXVIFY3`
 
@@ -171,7 +171,7 @@ When `NEXT_PUBLIC_CONTRACT_ID` is configured, the frontend polls Stellar RPC eve
 
 ## Screenshots
 
-Add final screenshots before submission. The paths are ready, but the image capture can be completed manually after opening the app with a browser wallet:
+Final submission screenshots are captured in `screenshots/`:
 
 - `screenshots/wallet-connected.png`
 - `screenshots/poll-loaded.png`
@@ -182,6 +182,11 @@ Add final screenshots before submission. The paths are ready, but the image capt
 
 `screenshots/vote-success.png` must show successful transaction state after a real vote.
 `screenshots/transaction-hash.png` must show the transaction hash and explorer link.
+
+Additional flow screenshots:
+
+- `screenshots/wallet-select-modal.png`
+- `screenshots/vote-pending.png`
 
 ## Submission Checklist
 
@@ -199,8 +204,8 @@ Add final screenshots before submission. The paths are ready, but the image capt
 - [x] Contract deployed to Stellar Testnet.
 - [x] Contract address added above.
 - [x] Verifiable contract call transaction hash added above.
-- [ ] Vercel live demo URL added above.
-- [ ] Screenshots captured and added.
+- [x] Vercel live demo URL added above.
+- [x] Screenshots captured and added.
 
 ## Commit Plan
 
