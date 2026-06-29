@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildContractExplorerUrl,
   buildExplorerUrl,
   formatErrorMessage,
   normalizeTransactionStatus,
@@ -25,6 +26,12 @@ describe("buildExplorerUrl", () => {
       "https://stellar.expert/explorer/testnet/tx/abc123",
     );
   });
+
+  it("points testnet contracts to Stellar Expert", () => {
+    expect(buildContractExplorerUrl("CBY123", "testnet")).toBe(
+      "https://stellar.expert/explorer/testnet/contract/CBY123",
+    );
+  });
 });
 
 describe("normalizeTransactionStatus", () => {
@@ -46,5 +53,13 @@ describe("formatErrorMessage", () => {
     expect(formatErrorMessage(new Error("tx_bad_auth: insufficient balance"))).toBe(
       "Insufficient testnet XLM. Please fund your wallet on Stellar Testnet.",
     );
+  });
+
+  it("recognizes ledger retention errors", () => {
+    expect(
+      formatErrorMessage(
+        new Error('{"code":-32600,"message":"startLedger must be within the ledger range"}'),
+      ),
+    ).toBe("Stellar event history moved forward. Refresh contract state and try again.");
   });
 });

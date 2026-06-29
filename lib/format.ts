@@ -21,6 +21,11 @@ export function buildExplorerUrl(hash: string, network: StellarNetwork = "testne
   return `https://stellar.expert/explorer/${explorerNetwork}/tx/${hash}`;
 }
 
+export function buildContractExplorerUrl(contractId: string, network: StellarNetwork = "testnet"): string {
+  const explorerNetwork = network === "public" ? "public" : "testnet";
+  return `https://stellar.expert/explorer/${explorerNetwork}/contract/${contractId}`;
+}
+
 export function normalizeTransactionStatus(status: string): TransactionStatus {
   const normalized = status.toUpperCase();
 
@@ -73,6 +78,10 @@ export function formatErrorMessage(error: unknown): string {
     message.includes("fee")
   ) {
     return "Insufficient testnet XLM. Please fund your wallet on Stellar Testnet.";
+  }
+
+  if (message.includes("startledger") || message.includes("ledger range")) {
+    return "Stellar event history moved forward. Refresh contract state and try again.";
   }
 
   if (message.includes("testnet") || message.includes("network")) {

@@ -1,4 +1,6 @@
-import { CheckCircle2, Clock3, ExternalLink, Loader2, XCircle } from "lucide-react";
+"use client";
+
+import { CheckCircle2, Clock3, Copy, ExternalLink, Loader2, XCircle } from "lucide-react";
 
 import { buildExplorerUrl, shortenAddress, type TransactionStatus as Status } from "@/lib/format";
 
@@ -17,11 +19,26 @@ const statusLabels: Record<Status, string> = {
   failed: "Failed",
 };
 
+const statusDescriptions: Record<Status, string> = {
+  idle: "No vote transaction has been submitted in this browser session yet.",
+  preparing: "Building and simulating the Soroban vote transaction.",
+  awaiting_signature: "Confirm the vote in your wallet to sign the transaction.",
+  pending: "Submitting the signed transaction to Stellar Testnet.",
+  success: "Vote transaction confirmed on Stellar Testnet.",
+  failed: "Transaction failed or was rejected. Review the message below and try again.",
+};
+
 export function TransactionStatus({ status, txHash, error }: Props) {
   const isBusy = status === "preparing" || status === "awaiting_signature" || status === "pending";
   const isSuccess = status === "success";
   const isFailed = status === "failed";
   const Icon = isSuccess ? CheckCircle2 : isFailed ? XCircle : isBusy ? Loader2 : Clock3;
+
+  async function copyTxHash() {
+    if (txHash) {
+      await navigator.clipboard.writeText(txHash);
+    }
+  }
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -38,6 +55,7 @@ export function TransactionStatus({ status, txHash, error }: Props) {
           } ${isFailed ? "text-rose-600" : "text-slate-500"}`}
         />
       </div>
+      <p className="mt-3 text-sm text-slate-600">{statusDescriptions[status]}</p>
 
       <div className="mt-5 space-y-3 rounded-md bg-slate-50 p-4 text-sm">
         <div className="flex items-center justify-between gap-4">
@@ -49,14 +67,24 @@ export function TransactionStatus({ status, txHash, error }: Props) {
           <span className="font-mono text-xs text-slate-900">{txHash ? shortenAddress(txHash) : "None yet"}</span>
         </div>
         {txHash ? (
-          <a
-            className="inline-flex items-center gap-2 font-medium text-cyan-700 hover:text-cyan-900"
-            href={buildExplorerUrl(txHash)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on Stellar Expert <ExternalLink className="h-4 w-4" />
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="inline-flex items-center gap-2 font-medium text-slate-700 hover:text-slate-950"
+              onClick={copyTxHash}
+              type="button"
+            >
+              <Copy className="h-4 w-4" />
+              Copy hash
+            </button>
+            <a
+              className="inline-flex items-center gap-2 font-medium text-cyan-700 hover:text-cyan-900"
+              href={buildExplorerUrl(txHash)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on Stellar Expert <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
         ) : null}
         {error ? <p className="rounded-md bg-rose-50 p-3 text-rose-700">{error}</p> : null}
       </div>

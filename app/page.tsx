@@ -4,9 +4,11 @@ import { AlertTriangle, RadioTower, RefreshCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { ContractCard } from "@/components/ContractCard";
 import { PollCard } from "@/components/PollCard";
 import { TransactionStatus } from "@/components/TransactionStatus";
 import { WalletConnect } from "@/components/WalletConnect";
+import { WalletPanel } from "@/components/WalletPanel";
 import {
   fetchPollState,
   fetchVoteEvents,
@@ -33,8 +35,20 @@ export default function Home() {
   const [error, setError] = useState<string>();
   const [activities, setActivities] = useState<VoteActivity[]>([]);
   const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date>();
+  const [successMessage, setSuccessMessage] = useState<string>();
 
   const canSyncEvents = Boolean(poll?.configured && poll.latestLedger);
+  const selectedOptionLabel = poll?.options.find((option) => option.id === selectedOption)?.label;
+
+  const resetWalletSessionUi = useCallback(() => {
+    setPublicKey(undefined);
+    setSelectedOption(null);
+    setStatus("idle");
+    setTxHash(undefined);
+    setError(undefined);
+    setSuccessMessage(undefined);
+  }, []);
 
   const refreshPoll = useCallback(async () => {
     setSyncing(true);
@@ -42,6 +56,7 @@ export default function Home() {
       const nextPoll = await fetchPollState(publicKey);
       setPoll(nextPoll);
       setError(undefined);
+      setLastSyncedAt(new Date());
     } catch (nextError) {
       setError(formatErrorMessage(nextError));
     } finally {
@@ -59,11 +74,10 @@ export default function Home() {
 
   useEffect(() => {
     const unsubscribe = onWalletDisconnect(() => {
-      setPublicKey(undefined);
-      setSelectedOption(null);
+      resetWalletSessionUi();
     });
     return unsubscribe;
-  }, []);
+  }, [resetWalletSessionUi]);
 
   useEffect(() => {
     const currentPoll = poll;
@@ -72,10 +86,10 @@ export default function Home() {
     }
 
     let active = true;
-    const startLedger = currentPoll.latestLedger;
+    const startLedger = currentPoll.latestLedger + 1;
     const timer = window.setInterval(async () => {
       try {
-          setSyncing(true);
+        setSyncing(true);
         const [freshPoll, events] = await Promise.all([
           fetchPollState(publicKey),
           fetchVoteEvents(startLedger, currentPoll.options),
@@ -83,6 +97,7 @@ export default function Home() {
 
         if (active) {
           setPoll(freshPoll);
+          setLastSyncedAt(new Date());
           setActivities((current) => {
             const combined = [...events, ...current];
             const unique = new Map(combined.map((item) => [item.id, item]));
@@ -117,6 +132,7 @@ export default function Home() {
   async function handleConnect() {
     try {
       setError(undefined);
+      setSuccessMessage(undefined);
       const address = await connectWallet();
       await assertWalletTestnet();
       setPublicKey(address);
@@ -127,15 +143,14 @@ export default function Home() {
 
   async function handleDisconnect() {
     await disconnectWallet();
-    setPublicKey(undefined);
-    setSelectedOption(null);
+    resetWalletSessionUi();
   }
 
   async function handleSwitchWallet() {
     try {
       setError(undefined);
-      setPublicKey(undefined);
-      setSelectedOption(null);
+      setSuccessMessage(undefined);
+      resetWalletSessionUi();
       const address = await switchWallet();
       await assertWalletTestnet();
       setPublicKey(address);
@@ -151,6 +166,7 @@ export default function Home() {
 
     try {
       setError(undefined);
+      setSuccessMessage(undefined);
       setStatus("preparing");
       await assertWalletTestnet();
       setStatus("awaiting_signature");
@@ -164,6 +180,7 @@ export default function Home() {
       setTxHash(result.hash);
       setStatus(result.status);
       setActivities((current) => [result.activity, ...current].slice(0, 8));
+      setSuccessMessage("Your vote was recorded on Stellar Testnet.");
       await refreshPoll();
     } catch (nextError) {
       setStatus("failed");
@@ -208,6 +225,12 @@ export default function Home() {
             </div>
           ) : null}
 
+          {successMessage && status === "success" ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">
+              {successMessage}
+            </div>
+          ) : null}
+
           {poll ? (
             <PollCard
               poll={poll}
@@ -225,21 +248,45 @@ export default function Home() {
         </div>
 
         <aside className="space-y-5">
+          <WalletPanel
+            publicKey={publicKey}
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+            onSwitchWallet={handleSwitchWallet}
+          />
+          <ContractCard />
           <button
             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             onClick={refreshPoll}
             type="button"
           >
-            <RefreshCcw className="h-4 w-4" />
-            Refresh contract state
+            <RefreshCcw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Refreshing contract state..." : "Refresh contract state"}
           </button>
+          {lastSyncedAt ? (
+            <p className="-mt-3 text-center text-xs text-slate-500">
+              Last synced {lastSyncedAt.toLocaleTimeString()}
+            </p>
+          ) : null}
           <TransactionStatus status={status} txHash={txHash} error={error} />
-          <ActivityFeed activities={activities} syncing={syncing} />
+          <ActivityFeed
+            activities={activities}
+            lastTransaction={
+              txHash
+                ? {
+                    hash: txHash,
+                    optionLabel: selectedOptionLabel,
+                    status,
+                  }
+                : undefined
+            }
+            syncing={syncing}
+          />
         </aside>
       </div>
 
       <footer className="border-t border-slate-200 bg-white px-5 py-4 text-center text-sm text-slate-500">
-        Built for Stellar Level 2
+        Built for Stellar Level 2 · Soroban Testnet · Smart Contract Poll
       </footer>
     </main>
   );

@@ -1,14 +1,19 @@
-import { RadioTower } from "lucide-react";
+import { ExternalLink, RadioTower } from "lucide-react";
 
-import { shortenAddress } from "@/lib/format";
+import { buildExplorerUrl, shortenAddress } from "@/lib/format";
 import type { VoteActivity } from "@/lib/contract";
 
 type Props = {
   activities: VoteActivity[];
+  lastTransaction?: {
+    hash: string;
+    optionLabel?: string;
+    status: string;
+  };
   syncing: boolean;
 };
 
-export function ActivityFeed({ activities, syncing }: Props) {
+export function ActivityFeed({ activities, lastTransaction, syncing }: Props) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
@@ -24,9 +29,32 @@ export function ActivityFeed({ activities, syncing }: Props) {
 
       <div className="mt-5 space-y-3">
         {activities.length === 0 ? (
-          <p className="rounded-md bg-slate-50 p-4 text-sm text-slate-500">
-            No contract vote activity has been synced yet.
-          </p>
+          lastTransaction ? (
+            <div className="rounded-md border border-cyan-100 bg-cyan-50 p-4 text-sm">
+              <p className="font-medium text-cyan-950">Last submitted vote transaction</p>
+              <p className="mt-1 text-cyan-800">
+                {lastTransaction.optionLabel
+                  ? `Vote for ${lastTransaction.optionLabel}`
+                  : "Vote submitted from this browser session"}
+              </p>
+              <p className="mt-3 font-mono text-xs text-cyan-900">
+                {shortenAddress(lastTransaction.hash, 8, 8)}
+              </p>
+              <a
+                className="mt-3 inline-flex items-center gap-2 font-medium text-cyan-800 hover:text-cyan-950"
+                href={buildExplorerUrl(lastTransaction.hash)}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Open transaction <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
+          ) : (
+            <p className="rounded-md bg-slate-50 p-4 text-sm text-slate-500">
+              Vote activity will appear after a transaction is submitted or synced from
+              contract events.
+            </p>
+          )
         ) : (
           activities.map((activity) => (
             <div className="rounded-md border border-slate-100 bg-slate-50 p-3" key={activity.id}>

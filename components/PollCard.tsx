@@ -1,4 +1,4 @@
-import { Vote } from "lucide-react";
+import { CheckCircle2, Vote } from "lucide-react";
 
 import { toPercent } from "@/lib/format";
 import type { PollState } from "@/lib/contract";
@@ -21,6 +21,25 @@ export function PollCard({
   onVote,
 }: Props) {
   const disabled = !walletConnected || selectedOption === null || voting || poll.hasVoted || !poll.configured;
+  const selectedLabel = poll.options.find((option) => option.id === selectedOption)?.label;
+  const voteButtonText = !walletConnected
+    ? "Connect wallet to vote"
+    : !poll.configured
+      ? "Contract not configured"
+      : poll.hasVoted
+        ? "Already voted"
+        : voting
+          ? "Submitting vote..."
+          : selectedLabel
+            ? `Vote for ${selectedLabel}`
+            : "Select an option to vote";
+  const helperText = !walletConnected
+    ? "Connect your wallet to submit an on-chain vote."
+    : poll.hasVoted
+      ? "This wallet has already voted. Results below are read from the contract."
+      : selectedOption === null
+        ? "Choose one option before submitting to Stellar Testnet."
+        : "Your wallet will sign a real Soroban transaction for this vote.";
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -57,9 +76,13 @@ export function PollCard({
               type="button"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-medium text-slate-950">{option.label}</span>
-                <span className="font-mono text-sm text-slate-600">{option.votes} votes</span>
+                <span className="flex min-w-0 items-center gap-2 font-medium text-slate-950">
+                  {selected ? <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-600" /> : null}
+                  <span className="truncate">{option.label}</span>
+                </span>
+                <span className="shrink-0 font-mono text-sm text-slate-600">{option.votes} votes</span>
               </div>
+              {selected ? <p className="mt-2 text-xs font-medium text-cyan-700">Selected</p> : null}
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
                 <div className="h-full rounded-full bg-cyan-500" style={{ width: `${percent}%` }} />
               </div>
@@ -76,8 +99,9 @@ export function PollCard({
         type="button"
       >
         <Vote className="h-4 w-4" />
-        {poll.hasVoted ? "Already voted" : voting ? "Submitting vote" : "Vote on Testnet"}
+        {voteButtonText}
       </button>
+      <p className="mt-3 text-center text-sm text-slate-500">{helperText}</p>
     </section>
   );
 }
