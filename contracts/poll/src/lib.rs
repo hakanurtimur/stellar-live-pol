@@ -140,21 +140,22 @@ mod test {
         let client = PollContractClient::new(&env, &contract_id);
         let voter = Address::generate(&env);
 
-        client
-            .init(
-                &String::from_str(&env, "Best Stellar feature?"),
-                &vec![
-                    &env,
-                    String::from_str(&env, "Wallets"),
-                    String::from_str(&env, "Soroban"),
-                ],
-            )
-            .unwrap();
+        client.init(
+            &String::from_str(&env, "Best Stellar feature?"),
+            &vec![
+                &env,
+                String::from_str(&env, "Wallets"),
+                String::from_str(&env, "Soroban"),
+            ],
+        );
 
-        client.vote(&voter, &1).unwrap();
+        client.vote(&voter, &1);
 
-        assert_eq!(client.get_results().unwrap(), vec![&env, 0_u32, 1_u32]);
+        assert_eq!(client.get_results(), vec![&env, 0_u32, 1_u32]);
         assert!(client.has_voted(&voter));
-        assert_eq!(client.vote(&voter, &1), Err(Ok(PollError::AlreadyVoted)));
+        assert_eq!(
+            client.try_vote(&voter, &1),
+            Err(Ok(PollError::AlreadyVoted))
+        );
     }
 }

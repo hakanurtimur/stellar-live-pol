@@ -20,6 +20,8 @@
 
 # production
 /build
+contracts/poll/target/
+contracts/poll/test_snapshots/
 
 # misc
 .DS_Store

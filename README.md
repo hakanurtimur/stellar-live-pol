@@ -2,9 +2,15 @@
 
 Live Demo: TODO - Add Vercel deployment URL
 
-Deployed Contract Address: TODO - Add deployed testnet contract address
+Deployed Contract Address: `CBYUYRYPOKU5PMS4A2XC4WCUI6S3ZE3RTRZPSSGGJWKDIN2BPWXVIFY3`
 
-Contract Call Transaction Hash: TODO - Add verifiable testnet transaction hash
+Contract Call Transaction Hash: `0293b6348186a3d12b975402977673a6861b30a03cce8edac62f3c2a0d363223`
+
+Contract Explorer: [Stellar Expert Testnet Contract](https://stellar.expert/explorer/testnet/contract/CBYUYRYPOKU5PMS4A2XC4WCUI6S3ZE3RTRZPSSGGJWKDIN2BPWXVIFY3)
+
+Vote Transaction: [Stellar Expert Testnet Transaction](https://stellar.expert/explorer/testnet/tx/0293b6348186a3d12b975402977673a6861b30a03cce8edac62f3c2a0d363223)
+
+Init Transaction: [Stellar Expert Testnet Transaction](https://stellar.expert/explorer/testnet/tx/b2136c8521b62f3a1da4582fb006a7562edeb3c443594ab255f1d985dd2e2a00)
 
 Stellar Live Poll is a Level 2 Stellar dApp submission project. It is a single-question live poll where a user connects a Stellar wallet, votes once, writes that vote to a Soroban smart contract on testnet, reads poll state back from RPC, and sees transaction status plus synced activity.
 
@@ -47,7 +53,7 @@ Open `http://localhost:3000`.
 ```bash
 NEXT_PUBLIC_STELLAR_NETWORK=testnet
 NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
-NEXT_PUBLIC_CONTRACT_ID=
+NEXT_PUBLIC_CONTRACT_ID=CBYUYRYPOKU5PMS4A2XC4WCUI6S3ZE3RTRZPSSGGJWKDIN2BPWXVIFY3
 ```
 
 Do not commit `.env` or secret keys. `.env.example` is safe to commit.
@@ -80,30 +86,53 @@ cd contracts/poll
 stellar contract build
 ```
 
+Current build output:
+
+```text
+Wasm File: target/wasm32v1-none/release/stellar_live_poll_contract.wasm
+Wasm Hash: 103661b529a0fa62a6b3c2d23fd65949610f55745bd27874d19b3e31a9ca65d3
+```
+
 ## Deploy Contract To Testnet
 
 ```bash
-stellar keys generate live-poll --network testnet --fund
+stellar keys generate livepoll-deployer --network testnet --fund
 stellar contract deploy \
   --wasm target/wasm32v1-none/release/stellar_live_poll_contract.wasm \
-  --source live-poll \
-  --network testnet
+  --source-account livepoll-deployer \
+  --network testnet \
+  --alias stellar_live_poll
 ```
+
+Deployment details:
+
+- Deployer public key: `GBJRWC7YIOVP6YY5UTMFQB2KZJTZTPHAGBIH7RHJKAAEDZFARL4T5FZC`
+- WASM upload transaction: [`e731fab60c4f212e288bd00bc011f65ddac0f079d0b9678a6c9303b01fbc7e99`](https://stellar.expert/explorer/testnet/tx/e731fab60c4f212e288bd00bc011f65ddac0f079d0b9678a6c9303b01fbc7e99)
+- Contract deploy transaction: [`5f5e3b3057f18b97c0d86617ab48df93a5738b8c5e5a6fa2c74842f902147c94`](https://stellar.expert/explorer/testnet/tx/5f5e3b3057f18b97c0d86617ab48df93a5738b8c5e5a6fa2c74842f902147c94)
+- Contract ID: `CBYUYRYPOKU5PMS4A2XC4WCUI6S3ZE3RTRZPSSGGJWKDIN2BPWXVIFY3`
 
 Initialize after deploy:
 
 ```bash
 stellar contract invoke \
-  --id <CONTRACT_ID> \
-  --source live-poll \
+  --id stellar_live_poll \
+  --source-account livepoll-deployer \
   --network testnet \
+  --send yes \
   -- \
   init \
-  --question "Which Stellar developer experience matters most for Level 2?" \
-  --options '["Multi-wallet UX","On-chain poll state","Live activity feed"]'
+  --question '"Which Stellar feature should we explore next?"' \
+  --options '["Smart Contracts","Payments","Wallet UX"]'
 ```
 
 Set the deployed contract ID in `NEXT_PUBLIC_CONTRACT_ID`.
+
+The deployed poll was initialized with:
+
+- Question: `Which Stellar feature should we explore next?`
+- Options: `Smart Contracts`, `Payments`, `Wallet UX`
+- Init transaction: [`b2136c8521b62f3a1da4582fb006a7562edeb3c443594ab255f1d985dd2e2a00`](https://stellar.expert/explorer/testnet/tx/b2136c8521b62f3a1da4582fb006a7562edeb3c443594ab255f1d985dd2e2a00)
+- First vote transaction: [`0293b6348186a3d12b975402977673a6861b30a03cce8edac62f3c2a0d363223`](https://stellar.expert/explorer/testnet/tx/0293b6348186a3d12b975402977673a6861b30a03cce8edac62f3c2a0d363223)
 
 ## Frontend Contract Calls
 
@@ -142,13 +171,14 @@ When `NEXT_PUBLIC_CONTRACT_ID` is configured, the frontend polls Stellar RPC eve
 
 ## Screenshots
 
-Add final screenshots before submission:
+Add final screenshots before submission. The paths are ready, but the image capture can be completed manually after opening the app with a browser wallet:
 
-- `screenshots/wallet-options.png`
 - `screenshots/wallet-connected.png`
-- `screenshots/vote-pending.png`
-- `screenshots/vote-success.png`
-- `screenshots/activity-feed.png`
+- `screenshots/poll-loaded-from-contract.png`
+- `screenshots/vote-transaction-pending.png`
+- `screenshots/vote-transaction-success.png`
+- `screenshots/results-updated-after-vote.png`
+- `screenshots/contract-transaction-hash-shown.png`
 
 ## Submission Checklist
 
@@ -163,9 +193,9 @@ Add final screenshots before submission:
 - [x] Activity feed and live sync polling.
 - [x] Error handling for required wallet and transaction cases.
 - [x] `.env.example` included and `.env` ignored.
-- [ ] Contract deployed to Stellar Testnet.
-- [ ] Contract address added above.
-- [ ] Verifiable contract call transaction hash added above.
+- [x] Contract deployed to Stellar Testnet.
+- [x] Contract address added above.
+- [x] Verifiable contract call transaction hash added above.
 - [ ] Vercel live demo URL added above.
 - [ ] Screenshots captured and added.
 
