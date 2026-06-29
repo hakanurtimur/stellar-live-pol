@@ -2,11 +2,12 @@
 
 import { CheckCircle2, Clock3, Copy, ExternalLink, Loader2, XCircle } from "lucide-react";
 
-import { buildExplorerUrl, shortenAddress, type TransactionStatus as Status } from "@/lib/format";
+import { type TransactionStatus as Status } from "@/lib/format";
+import type { LastTransaction } from "@/lib/transaction-state";
 
 type Props = {
   status: Status;
-  txHash?: string;
+  lastTransaction?: LastTransaction;
   error?: string;
 };
 
@@ -24,19 +25,19 @@ const statusDescriptions: Record<Status, string> = {
   preparing: "Building and simulating the Soroban vote transaction.",
   awaiting_signature: "Confirm the vote in your wallet to sign the transaction.",
   pending: "Submitting the signed transaction to Stellar Testnet.",
-  success: "Vote transaction confirmed on Stellar Testnet.",
+  success: "Vote submitted successfully. Your vote was recorded on Stellar Testnet.",
   failed: "Transaction failed or was rejected. Review the message below and try again.",
 };
 
-export function TransactionStatus({ status, txHash, error }: Props) {
+export function TransactionStatus({ status, lastTransaction, error }: Props) {
   const isBusy = status === "preparing" || status === "awaiting_signature" || status === "pending";
   const isSuccess = status === "success";
   const isFailed = status === "failed";
   const Icon = isSuccess ? CheckCircle2 : isFailed ? XCircle : isBusy ? Loader2 : Clock3;
 
   async function copyTxHash() {
-    if (txHash) {
-      await navigator.clipboard.writeText(txHash);
+    if (lastTransaction) {
+      await navigator.clipboard.writeText(lastTransaction.hash);
     }
   }
 
@@ -64,9 +65,11 @@ export function TransactionStatus({ status, txHash, error }: Props) {
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-slate-500">Transaction hash</span>
-          <span className="font-mono text-xs text-slate-900">{txHash ? shortenAddress(txHash) : "None yet"}</span>
+          <span className="min-w-0 break-all text-right font-mono text-xs text-slate-900">
+            {lastTransaction ? lastTransaction.hash : "None yet"}
+          </span>
         </div>
-        {txHash ? (
+        {lastTransaction ? (
           <div className="flex flex-wrap items-center gap-3">
             <button
               className="inline-flex items-center gap-2 font-medium text-slate-700 hover:text-slate-950"
@@ -78,7 +81,7 @@ export function TransactionStatus({ status, txHash, error }: Props) {
             </button>
             <a
               className="inline-flex items-center gap-2 font-medium text-cyan-700 hover:text-cyan-900"
-              href={buildExplorerUrl(txHash)}
+              href={lastTransaction.explorerUrl}
               target="_blank"
               rel="noreferrer"
             >

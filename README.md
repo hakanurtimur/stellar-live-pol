@@ -163,7 +163,7 @@ The app initializes StellarWalletsKit with `defaultModules()` on testnet. The mo
 
 ## Transaction Status
 
-The transaction card displays current status, transaction hash, Stellar Expert link, and error message. Write flow status moves through preparing, awaiting signature, pending, success, or failed.
+The transaction card displays current status, the last successful transaction hash, Stellar Expert link, and error message. Write flow status moves through preparing, awaiting signature, pending, success, or failed. Contract state refreshes do not clear the last successful vote transaction; disconnecting or switching wallets resets that browser-session transaction state.
 
 ## Event And Live Sync
 
@@ -174,11 +174,14 @@ When `NEXT_PUBLIC_CONTRACT_ID` is configured, the frontend polls Stellar RPC eve
 Add final screenshots before submission. The paths are ready, but the image capture can be completed manually after opening the app with a browser wallet:
 
 - `screenshots/wallet-connected.png`
-- `screenshots/poll-loaded-from-contract.png`
-- `screenshots/vote-transaction-pending.png`
-- `screenshots/vote-transaction-success.png`
-- `screenshots/results-updated-after-vote.png`
-- `screenshots/contract-transaction-hash-shown.png`
+- `screenshots/poll-loaded.png`
+- `screenshots/vote-ready.png`
+- `screenshots/vote-success.png`
+- `screenshots/results-updated.png`
+- `screenshots/transaction-hash.png`
+
+`screenshots/vote-success.png` must show successful transaction state after a real vote.
+`screenshots/transaction-hash.png` must show the transaction hash and explorer link.
 
 ## Submission Checklist
 

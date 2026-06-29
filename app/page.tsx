@@ -16,7 +16,14 @@ import {
   type PollState,
   type VoteActivity,
 } from "@/lib/contract";
-import { formatErrorMessage, type TransactionStatus as Status } from "@/lib/format";
+import { formatErrorMessage } from "@/lib/format";
+import {
+  initialTransactionState,
+  recordFailedTransaction,
+  recordSuccessfulTransaction,
+  resetTransactionState,
+  startTransaction,
+} from "@/lib/transaction-state";
 import {
   assertWalletTestnet,
   connectWallet,
@@ -30,24 +37,19 @@ export default function Home() {
   const [publicKey, setPublicKey] = useState<string>();
   const [poll, setPoll] = useState<PollState>();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [status, setStatus] = useState<Status>("idle");
-  const [txHash, setTxHash] = useState<string>();
   const [error, setError] = useState<string>();
+  const [transactionState, setTransactionState] = useState(initialTransactionState);
   const [activities, setActivities] = useState<VoteActivity[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date>();
-  const [successMessage, setSuccessMessage] = useState<string>();
 
   const canSyncEvents = Boolean(poll?.configured && poll.latestLedger);
-  const selectedOptionLabel = poll?.options.find((option) => option.id === selectedOption)?.label;
 
   const resetWalletSessionUi = useCallback(() => {
     setPublicKey(undefined);
     setSelectedOption(null);
-    setStatus("idle");
-    setTxHash(undefined);
+    setTransactionState(resetTransactionState());
     setError(undefined);
-    setSuccessMessage(undefined);
   }, []);
 
   const refreshPoll = useCallback(async () => {
@@ -132,7 +134,6 @@ export default function Home() {
   async function handleConnect() {
     try {
       setError(undefined);
-      setSuccessMessage(undefined);
       const address = await connectWallet();
       await assertWalletTestnet();
       setPublicKey(address);
@@ -149,7 +150,6 @@ export default function Home() {
   async function handleSwitchWallet() {
     try {
       setError(undefined);
-      setSuccessMessage(undefined);
       resetWalletSessionUi();
       const address = await switchWallet();
       await assertWalletTestnet();
@@ -164,27 +164,41 @@ export default function Home() {
       return;
     }
 
+    const optionLabel =
+      poll.options.find((option) => option.id === selectedOption)?.label ?? `Option ${selectedOption}`;
+
     try {
       setError(undefined);
-      setSuccessMessage(undefined);
-      setStatus("preparing");
+      setTransactionState((current) => startTransaction(current, "preparing"));
       await assertWalletTestnet();
-      setStatus("awaiting_signature");
+      setTransactionState((current) => startTransaction(current, "awaiting_signature"));
       const result = await submitVote(
         publicKey,
         selectedOption,
         (xdr) => signTransactionXdr(publicKey, xdr),
         poll.options,
       );
-      setStatus("pending");
-      setTxHash(result.hash);
-      setStatus(result.status);
+      setTransactionState((current) => startTransaction(current, "pending"));
+      if (result.status === "success") {
+        setTransactionState((current) =>
+          recordSuccessfulTransaction(current, {
+            hash: result.hash,
+            optionIndex: selectedOption,
+            optionLabel,
+            submittedAt: new Date().toISOString(),
+          }),
+        );
+      } else {
+        setTransactionState((current) =>
+          recordFailedTransaction(current, "Vote transaction was not confirmed on Stellar Testnet."),
+        );
+      }
       setActivities((current) => [result.activity, ...current].slice(0, 8));
-      setSuccessMessage("Your vote was recorded on Stellar Testnet.");
       await refreshPoll();
     } catch (nextError) {
-      setStatus("failed");
-      setError(formatErrorMessage(nextError));
+      const nextMessage = formatErrorMessage(nextError);
+      setTransactionState((current) => recordFailedTransaction(current, nextMessage));
+      setError(nextMessage);
     }
   }
 
@@ -225,9 +239,9 @@ export default function Home() {
             </div>
           ) : null}
 
-          {successMessage && status === "success" ? (
+          {transactionState.status === "success" ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">
-              {successMessage}
+              Your vote was recorded on Stellar Testnet.
             </div>
           ) : null}
 
@@ -236,7 +250,11 @@ export default function Home() {
               poll={poll}
               selectedOption={selectedOption}
               walletConnected={Boolean(publicKey)}
-              voting={status === "preparing" || status === "awaiting_signature" || status === "pending"}
+              voting={
+                transactionState.status === "preparing" ||
+                transactionState.status === "awaiting_signature" ||
+                transactionState.status === "pending"
+              }
               onSelect={setSelectedOption}
               onVote={handleVote}
             />
@@ -268,18 +286,14 @@ export default function Home() {
               Last synced {lastSyncedAt.toLocaleTimeString()}
             </p>
           ) : null}
-          <TransactionStatus status={status} txHash={txHash} error={error} />
+          <TransactionStatus
+            status={transactionState.status}
+            lastTransaction={transactionState.lastTransaction}
+            error={transactionState.error ?? error}
+          />
           <ActivityFeed
             activities={activities}
-            lastTransaction={
-              txHash
-                ? {
-                    hash: txHash,
-                    optionLabel: selectedOptionLabel,
-                    status,
-                  }
-                : undefined
-            }
+            lastTransaction={transactionState.lastTransaction}
             syncing={syncing}
           />
         </aside>

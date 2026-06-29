@@ -1,15 +1,12 @@
 import { ExternalLink, RadioTower } from "lucide-react";
 
-import { buildExplorerUrl, shortenAddress } from "@/lib/format";
-import type { VoteActivity } from "@/lib/contract";
+import type { VoteActivity } from "../lib/contract";
+import { shortenAddress } from "../lib/format";
+import type { LastTransaction } from "../lib/transaction-state";
 
 type Props = {
   activities: VoteActivity[];
-  lastTransaction?: {
-    hash: string;
-    optionLabel?: string;
-    status: string;
-  };
+  lastTransaction?: LastTransaction;
   syncing: boolean;
 };
 
@@ -31,23 +28,22 @@ export function ActivityFeed({ activities, lastTransaction, syncing }: Props) {
         {activities.length === 0 ? (
           lastTransaction ? (
             <div className="rounded-md border border-cyan-100 bg-cyan-50 p-4 text-sm">
-              <p className="font-medium text-cyan-950">Last submitted vote transaction</p>
-              <p className="mt-1 text-cyan-800">
-                {lastTransaction.optionLabel
-                  ? `Vote for ${lastTransaction.optionLabel}`
-                  : "Vote submitted from this browser session"}
-              </p>
+              <p className="font-medium text-cyan-950">Vote submitted</p>
+              <p className="mt-1 text-cyan-800">Option: {lastTransaction.optionLabel}</p>
               <p className="mt-3 font-mono text-xs text-cyan-900">
-                {shortenAddress(lastTransaction.hash, 8, 8)}
+                Tx: {shortenAddress(lastTransaction.hash, 8, 8)}
               </p>
               <a
                 className="mt-3 inline-flex items-center gap-2 font-medium text-cyan-800 hover:text-cyan-950"
-                href={buildExplorerUrl(lastTransaction.hash)}
+                href={lastTransaction.explorerUrl}
                 rel="noreferrer"
                 target="_blank"
               >
-                Open transaction <ExternalLink className="h-4 w-4" />
+                View on Explorer <ExternalLink className="h-4 w-4" />
               </a>
+              <time className="mt-2 block text-xs text-cyan-700">
+                {new Date(lastTransaction.submittedAt).toLocaleString()}
+              </time>
             </div>
           ) : (
             <p className="rounded-md bg-slate-50 p-4 text-sm text-slate-500">
