@@ -21,6 +21,7 @@ import {
   disconnectWallet,
   onWalletDisconnect,
   signTransactionXdr,
+  switchWallet,
 } from "@/lib/wallet";
 
 export default function Home() {
@@ -130,6 +131,19 @@ export default function Home() {
     setSelectedOption(null);
   }
 
+  async function handleSwitchWallet() {
+    try {
+      setError(undefined);
+      setPublicKey(undefined);
+      setSelectedOption(null);
+      const address = await switchWallet();
+      await assertWalletTestnet();
+      setPublicKey(address);
+    } catch (nextError) {
+      setError(formatErrorMessage(nextError));
+    }
+  }
+
   async function handleVote() {
     if (!publicKey || selectedOption === null || !poll) {
       return;
@@ -180,6 +194,7 @@ export default function Home() {
             publicKey={publicKey}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
+            onSwitchWallet={handleSwitchWallet}
           />
         </div>
       </header>

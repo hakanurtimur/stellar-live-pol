@@ -7,6 +7,8 @@ import {
 } from "@creit.tech/stellar-wallets-kit";
 import { defaultModules } from "@creit.tech/stellar-wallets-kit/modules/utils";
 
+import { clearWalletKitStorage } from "./wallet-storage";
+
 let initialized = false;
 
 export function getWalletKit(): typeof StellarWalletsKit {
@@ -34,6 +36,13 @@ export async function connectWallet(): Promise<string> {
 
 export async function disconnectWallet(): Promise<void> {
   await getWalletKit().disconnect();
+  clearWalletKitStorage();
+}
+
+export async function switchWallet(): Promise<string> {
+  await disconnectWallet();
+  clearWalletKitStorage();
+  return connectWallet();
 }
 
 export async function signTransactionXdr(address: string, xdr: string): Promise<string> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, LogOut, Wallet } from "lucide-react";
+import { Copy, LogOut, Repeat2, Wallet } from "lucide-react";
 
 import { shortenAddress } from "@/lib/format";
 
@@ -8,9 +8,10 @@ type Props = {
   publicKey?: string;
   onConnect: () => Promise<void>;
   onDisconnect: () => Promise<void>;
+  onSwitchWallet: () => Promise<void>;
 };
 
-export function WalletConnect({ publicKey, onConnect, onDisconnect }: Props) {
+export function WalletConnect({ publicKey, onConnect, onDisconnect, onSwitchWallet }: Props) {
   async function copyAddress() {
     if (publicKey) {
       await navigator.clipboard.writeText(publicKey);
@@ -42,6 +43,15 @@ export function WalletConnect({ publicKey, onConnect, onDisconnect }: Props) {
         type="button"
       >
         <Copy className="h-4 w-4" />
+      </button>
+      <button
+        aria-label="Switch wallet"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:bg-cyan-100"
+        onClick={onSwitchWallet}
+        title="Switch wallet"
+        type="button"
+      >
+        <Repeat2 className="h-4 w-4" />
       </button>
       <button
         aria-label="Disconnect wallet"
